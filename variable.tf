@@ -4,7 +4,6 @@ variable "aws_region" {
   default     = "ca-central-1"
 }
 
-
 variable "vpc_cidr" {
    description = "VPC ID"
    type        = string
