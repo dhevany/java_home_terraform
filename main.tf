@@ -14,8 +14,9 @@ provider "aws" {
 
 
 resource "aws_vpc" "main" {
-  cidr_block = var.
+  cidr_block = var.vpc_cidr
+  enable_dns_hostname = true
   tags = {
-    Name = "Default VPC"
+    Name = "${var.name}=vpc"
   }
 }
