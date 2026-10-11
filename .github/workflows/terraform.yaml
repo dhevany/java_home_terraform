@@ -41,10 +41,3 @@ jobs:
         run: terraform apply -auto-approve tfplan
 
 
-      # Step 5: Preview resources to destroy
-      - name: Terraform Destroy Plan
-        run: terraform plan -destroy -out=destroy.tfplan
-
-      # Step 6: Destroy AWS resources
-      - name: Terraform Destroy
-        run: terraform apply -auto-approve destroy
