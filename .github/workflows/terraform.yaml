@@ -2,42 +2,102 @@
 name: Terraform Deployment
 
 on:
-  push:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Select Terraform Action"
+        required: true
+        type: choice
+        options:
+          - deploy
+          - destroy
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
-    runs-on: ubuntu-22.04
-
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ca-central-1
+  # ======================================
+  # JOB 1: TERRAFORM DEPLOY
+  # ======================================
+  terraform-deploy:
+    name: Terraform Deploy
+    if: ${{ inputs.action == 'deploy' }}
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Checkout repository
       - name: Code Checkout
         uses: actions/checkout@v4
 
-      # Step 2: Install Terraform
+      # Step 2: Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      # Step 3: Setup Terraform
       - name: Set Up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.12.2
 
-      # Step 3: Initialize Terraform
+      # Step 4: Initialize Terraform
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -input=false
 
-      # Step 4: Validate configuration
+      # Step 5: Validate configuration
       - name: Terraform Validate
         run: terraform validate
 
-      # Step 5: Generate execution plan
+      # Step 6: Terraform Plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -out=tfplan
 
-      # Step 6: Apply Terraform changes
+      # Step 7: Terraform Apply
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve tfplan
 
+  # ======================================
+  # JOB 2: TERRAFORM DESTROY
+  # ======================================
+  terraform-destroy:
+    name: Terraform Destroy
+    if: ${{ inputs.action == 'destroy' }}
+    runs-on: ubuntu-latest
 
+    steps:
+      # Step 1: Checkout repository
+      - name: Code Checkout
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      # Step 3: Setup Terraform
+      - name: Set Up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+
+      # Step 4: Initialize Terraform
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      # Step 5: Validate configuration
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Step 6: Terraform Destroy Plan
+      - name: Terraform Destroy Plan
+        run: terraform plan -destroy -input=false -out=destroy.tfplan
+
+      # Step 7: Terraform Destroy
+      - name: Terraform Destroy
+        run: terraform apply -input=false -auto-approve destroy.tfplan
